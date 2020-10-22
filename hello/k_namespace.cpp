@@ -1,4 +1,5 @@
 #include "k_namespace.h"
+#include "k.h"
 
 K k_Namespace;
 K1 k1_Namespace;

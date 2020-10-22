@@ -1,2 +1,2 @@
 @echo off
-..\cxxclean.exe -vs ./hello.vcxproj
+..\cxxclean.exe -vs ./hello.vcxproj -- -isystem  "E:\llvm-project"

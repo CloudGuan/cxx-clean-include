@@ -222,7 +222,7 @@ public:
 	void UseQualType(SourceLocation loc, const QualType &t, const NestedNameSpecifier *specifier = nullptr);
 
 	// 当前位置使用目标类型（注：Type代表某个类型，但不含const、volatile、static等的修饰）
-	inline void UseType(SourceLocation loc, const Type *t, const NestedNameSpecifier *specifier = nullptr);
+	inline void UseType(SourceLocation loc, const clang::Type *t, const NestedNameSpecifier *specifier = nullptr);
 
 	// 引用上下文，如命名空间
 	void UseContext(SourceLocation loc, const DeclContext*);

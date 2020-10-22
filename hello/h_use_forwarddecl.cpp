@@ -1,3 +1,3 @@
-#include "h_use_forwarddecl.h"
+class H;
 
 H* h_Redeclare;

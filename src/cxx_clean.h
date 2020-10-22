@@ -15,6 +15,7 @@
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Tooling/Tooling.h"
+#include "clang/Tooling/CompilationDatabase.h"
 
 using namespace std;
 using namespace clang;
@@ -48,7 +49,9 @@ public:
 	void MacroDefined(const Token &macroName, const MacroDirective *direct) override;
 
 	// 宏被#undef
-	void MacroUndefined(const Token &macroName, const MacroDefinition &definition) override;
+        void MacroUndefined(const Token &macroName,
+                            const MacroDefinition &definition,
+                            const MacroDirective *Undef) override;
 
 	// 宏扩展
 	void MacroExpands(const Token &macroName, const MacroDefinition &definition, SourceRange range, const MacroArgs *args) override;
@@ -159,7 +162,7 @@ public:
 	{}
 
 	// 开始文件处理
-	bool BeginSourceFileAction(CompilerInstance &compiler, StringRef filename) override;
+	bool BeginSourceFileAction(CompilerInstance &compiler) override;
 
 	// 结束文件处理
 	void EndSourceFileAction() override;
@@ -186,7 +189,10 @@ public:
 	// 例如：
 	//		假设使用cxxclean -clean ./hello/ -- -include log.h
 	//		则-clean ./hello/将被本工具解析，-include log.h将被clang库解析
-	static FixedCompilationDatabase *CxxCleanOptionsParser::SplitCommandLine(int &argc, const char *const *argv, Twine directory = ".");
+        static clang::tooling::FixedCompilationDatabase *
+        CxxCleanOptionsParser::SplitCommandLine(int &argc,
+                                                const char *const *argv,
+                                                Twine directory = ".");
 
 	// 添加clang参数
 	void AddClangArgument(ClangTool &tool, const char *arg) const;

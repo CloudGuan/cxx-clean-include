@@ -1,4 +1,4 @@
-#include "n.h"
+class N;
 
 class TestN
 {

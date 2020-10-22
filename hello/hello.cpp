@@ -27,6 +27,7 @@
 #include "o_nested_class.h"				// 测试前置声明分布在各个文件的情况
 #include "p_same_file.h"				// 测试文件被重复包含
 #include "q_using_class.h"				// 测试using类
+#include "k.h"
 
 #include <stdio.h>
 #include <stdio.h>
@@ -113,7 +114,7 @@ J_Enum j;
 
 ///////////////////// 11. 测试k_namespace.h：如果某个文件就using namespace有用，其他啥都没用，可以考虑把using namespace挪出来 /////////////////////
 
-K k;
+k_ns::K k;
 
 ///////////////////// 13. 测试l_use_template.h：应能识别模板参数类型 /////////////////////
 

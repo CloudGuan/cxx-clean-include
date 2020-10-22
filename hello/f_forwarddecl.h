@@ -1,9 +1,7 @@
 #ifndef _f_forwarddecl_h_
 #define _f_forwarddecl_h_
 
-#include "f_4.h"
-#include "f_3.h"
-#include "f_2.h"
+class F_2;
 #include "f_1.h"
 
 class F_Fowward

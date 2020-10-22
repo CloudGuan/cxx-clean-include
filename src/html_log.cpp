@@ -136,7 +136,7 @@ HtmlLog::HtmlLog()
 	: m_log(nullptr)
 {}
 
-bool HtmlLog::Init(const std::wstring &htmlPath, const std::string &htmlTitle, const std::string &tip)
+bool HtmlLog::Init(const wchar_t* htmlPath, const char* htmlTitle, const char* tip)
 {
 	m_htmlPath = htmlPath;
 
@@ -156,8 +156,8 @@ bool HtmlLog::Init(const std::wstring &htmlPath, const std::string &htmlTitle, c
 	std::wstring wstr_now = strtool::s2ws(str_now);
 
 	m_htmlPath = strtool::get_wide_text(cn_log, m_htmlPath.c_str(), wstr_now.c_str());
-	m_htmlTitle = strtool::get_text(cn_clean, htmlTitle.c_str());
-	m_tip = strtool::get_text(cn_clean, tip.c_str());
+	m_htmlTitle = strtool::get_text(cn_clean, htmlTitle);
+	m_tip = strtool::get_text(cn_clean, tip);
 
 	m_htmlPath = s2ws(pathtool::get_absolute_path(ws2s(m_htmlPath).c_str()));
 	return true;

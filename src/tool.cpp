@@ -5,6 +5,11 @@
 //------------------------------------------------------------------------------
 
 #include "tool.h"
+
+#ifdef WIN32
+#include <intrin.h>
+#endif
+
 #include <sys/stat.h>
 #include <io.h>
 #include <fstream>
@@ -366,7 +371,7 @@ namespace pathtool
 	// 根据路径获取文件名
 	string get_file_name(const char *path)
 	{
-		return llvm::sys::path::filename(path);
+		return llvm::sys::path::filename(path).str();
 	}
 
 	// 简化路径
@@ -481,7 +486,7 @@ namespace pathtool
 		}
 
 		filepath = simplify_path(filepath.c_str());
-		return filepath.str();
+		return filepath.str().str();
 	}
 
 	string get_absolute_path(const char *base_path, const char* relative_path)
@@ -614,7 +619,7 @@ namespace pathtool
 	{
 		llvm::SmallString<2048> path;
 		std::error_code err = llvm::sys::fs::current_path(path);
-		return err ? "" : path.str();
+		return err ? "" : path.str().str();
 	}
 }
 

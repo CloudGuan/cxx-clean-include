@@ -1,7 +1,7 @@
 #ifndef _r_3_h_
 #define _r_3_h_
 
-#include "r_2.h"
+class R1;
 
 class R3 {};
 

@@ -96,7 +96,7 @@ inline void MapEraseIf(Container& container, const Op& op)
 template <typename Container, typename Key1, typename Key2>
 inline bool HasInMap(const Container &container, const Key1 &a, const Key2 &b)
 {
-	auto &itr = container.find(a);
+	auto itr = container.find(a);
 	if (itr == container.end())
 	{
 		return false;
@@ -216,7 +216,7 @@ vector<ParsingFile::HeaderSearchDir> ParsingFile::TakeHeaderSearchPaths(const cl
 		{
 			if (const DirectoryEntry* entry = itr->getDir())
 			{
-				const string path = pathtool::fix_path(entry->getName());
+				const string path = pathtool::fix_path(entry->getName().str());
 				dirs.insert(make_pair(path, includeKind));
 			}
 		}
@@ -640,7 +640,7 @@ inline bool ParsingFile::Contains(FileID top, FileID kid) const
 		return true;
 	}
 
-	auto &itr = m_minKids.find(top);
+	auto itr = m_minKids.find(top);
 	if (itr == m_minKids.end())
 	{
 		return false;
@@ -784,7 +784,7 @@ void ParsingFile::GenerateForwardClass()
 		FileID by = itr.first;
 		RecordSet &records = itr.second;
 
-		auto &beUseItr = m_fileUseRecords.find(by);
+		auto beUseItr = m_fileUseRecords.find(by);
 		if (beUseItr != m_fileUseRecords.end())
 		{
 			const RecordSet &beUseRecords = beUseItr->second;
@@ -878,14 +878,14 @@ void ParsingFile::MinimizeForwardClass()
 		RecordSet smallForwards = itr.second;	// 这里故意深拷贝
 
 		// 本文件应新增的前置声明 = [本文件新增的前置声明]减去[后代新增的前置声明]
-		auto &includeItr = m_minInclude.find(by);
+		auto includeItr = m_minInclude.find(by);
 		if (includeItr != m_minInclude.end())
 		{
 			const FileSet &minIncludes = includeItr->second;
 
 			for (FileID minInclude : minIncludes)
 			{
-				auto &recordItr = bigForwards.find(minInclude);
+				auto recordItr = bigForwards.find(minInclude);
 				if (recordItr != bigForwards.end())
 				{
 					const RecordSet &records = recordItr->second;
@@ -913,7 +913,7 @@ void ParsingFile::GetAllForwardsInKids(FileID top, RecordSet &forwards)
 	FileSet chain;
 	GetChain(chain, top, [&](const FileSet &done, FileSet &todo, FileID cur)
 	{
-		auto &useItr = m_minInclude.find(cur);
+		auto useItr = m_minInclude.find(cur);
 		if (useItr != m_minInclude.end())
 		{
 			const FileSet &minIncludes = useItr->second;
@@ -927,7 +927,7 @@ void ParsingFile::GetAllForwardsInKids(FileID top, RecordSet &forwards)
 	// 2. 把这些后代文件新增的前置声明合到一起
 	for (FileID file : chain)
 	{
-		auto &itr = m_fowardClass.find(file);
+		auto itr = m_fowardClass.find(file);
 		if (itr != m_fowardClass.end())
 		{
 			Add(forwards, itr->second);
@@ -943,7 +943,7 @@ std::string ParsingFile::GetSourceOfRange(SourceRange range) const
 		return "";
 	}
 
-	range = m_srcMgr->getExpansionRange(range);
+	range = m_srcMgr->getExpansionRange(range).getAsRange();
 
 	if (range.getEnd() < range.getBegin())
 	{
@@ -1180,7 +1180,7 @@ inline FileID ParsingFile::GetParent(FileID child) const
 		return FileID();
 	}
 
-	auto &itr = m_parents.find(child);
+	auto itr = m_parents.find(child);
 	if (itr != m_parents.end())
 	{
 		return itr->second;
@@ -1593,7 +1593,7 @@ void ParsingFile::UsingNamespace(const UsingDirectiveDecl *d)
 	// 优先找本文件内的namespace声明
 	for (const NamespaceDecl *ns : nominatedNs->redecls())
 	{
-		SourceLocation nsLoc = GetSpellingLoc(ns->getLocStart());
+		SourceLocation nsLoc = GetSpellingLoc(ns->getBeginLoc());
 		if (nsLoc.isValid() && isBeforeInTranslationUnit(nsLoc, usingLoc) && m_srcMgr->isWrittenInSameFile(nsLoc, usingLoc))
 		{
 			bestNs = ns;
@@ -1606,7 +1606,7 @@ void ParsingFile::UsingNamespace(const UsingDirectiveDecl *d)
 	{
 		for (const NamespaceDecl *ns : nominatedNs->redecls())
 		{
-			SourceLocation nsLoc = GetSpellingLoc(ns->getLocStart());
+			SourceLocation nsLoc = GetSpellingLoc(ns->getBeginLoc());
 			if (nsLoc.isValid() && isBeforeInTranslationUnit(nsLoc, usingLoc) && IsAncestorByName(GetFileID(nsLoc), atFileID))
 			{
 				bestNs = ns;
@@ -1622,7 +1622,7 @@ void ParsingFile::UsingNamespace(const UsingDirectiveDecl *d)
 
 	if (bestNs)
 	{
-		SourceLocation nsLoc = GetSpellingLoc(bestNs->getLocStart());
+		SourceLocation nsLoc = GetSpellingLoc(bestNs->getBeginLoc());
 
 		std::string name;
 		GetNameForLog(name, bestNs->getQualifiedNameAsString());
@@ -1654,7 +1654,7 @@ void ParsingFile::UsingXXX(const UsingDecl *d)
 		std::string name;
 		GetNameForLog(name, "using " << shadowDecl->getQualifiedNameAsString() << "[" << nameDecl->getQualifiedNameAsString() << "]" << "[" << nameDecl->getDeclKindName() << "]");
 
-		Use(usingLoc, nameDecl->getLocEnd(), name.c_str());
+		Use(usingLoc, nameDecl->getEndLoc(), name.c_str());
 	}
 }
 
@@ -2108,7 +2108,7 @@ void ParsingFile::UseVarType(SourceLocation loc, const QualType &var, const Nest
 
 			for (const TagDecl *redecl : cxxRecordDecl->redecls())
 			{
-				SourceLocation recordLoc = redecl->getLocStart();
+				SourceLocation recordLoc = redecl->getBeginLoc();
 				FileID recordFile = GetFileID(recordLoc);
 
 				if (isBeforeInTranslationUnit(recordLoc, loc))
@@ -2209,7 +2209,7 @@ void ParsingFile::UseValueDecl(SourceLocation loc, const ValueDecl *valueDecl, c
 		std::string name;
 		GetNameForLog(name, valueDecl->getQualifiedNameAsString() << "[" << valueDecl->getDeclKindName() << "]");
 
-		Use(loc, valueDecl->getLocEnd(), name.c_str());
+		Use(loc, valueDecl->getEndLoc(), name.c_str());
 	}
 
 	UseVarType(loc, valueDecl->getType(), specifier);
@@ -2226,7 +2226,7 @@ void ParsingFile::UseNameDecl(SourceLocation loc, const NamedDecl *nameDecl)
 	std::string name;
 	GetNameForLog(name, nameDecl->getQualifiedNameAsString() << "[" << nameDecl->getDeclKindName() << "]");
 
-	Use(loc, nameDecl->getLocEnd(), name.c_str());
+	Use(loc, nameDecl->getEndLoc(), name.c_str());
 }
 
 // 新增使用函数声明记录
@@ -2282,7 +2282,7 @@ void ParsingFile::UseFuncDecl(SourceLocation loc, const FunctionDecl *f)
 	if (templatedKind != FunctionDecl::TK_NonTemplate)
 	{
 		// [调用模板处] 引用 [模板定义处]
-		Use(f->getLocStart(), f->getLocation(), name.c_str());
+		Use(f->getBeginLoc(), f->getLocation(), name.c_str());
 	}
 }
 
@@ -2301,7 +2301,7 @@ void ParsingFile::UseTemplateArgument(SourceLocation loc, const TemplateArgument
 		break;
 
 	case TemplateArgument::Expression:
-		Use(loc, arg.getAsExpr()->getLocStart(), "[ParsingFile::UseTemplateArgument][case TemplateArgument::Expression]");
+		Use(loc, arg.getAsExpr()->getBeginLoc(), "[ParsingFile::UseTemplateArgument][case TemplateArgument::Expression]");
 		break;
 
 	case TemplateArgument::Template:
@@ -2376,7 +2376,7 @@ void ParsingFile::UseRecord(SourceLocation loc, const RecordDecl *record)
 	std::string name;
 	GetNameForLog(name, GetRecordName(*record) << "[" << ((Decl*)record)->getDeclKindName() << "]");
 
-	Use(loc, record->getLocStart(), name.c_str());
+	Use(loc, record->getBeginLoc(), name.c_str());
 }
 
 // 是否为系统头文件，例如<vector>、<iostream>等就是系统文件
@@ -3155,7 +3155,7 @@ void ParsingFile::MergeTo(FileHistoryMap &oldFiles) const
 		const string &fileName	= fileItr.first;
 		const FileHistory &newFile	= fileItr.second;
 
-		auto &findItr = oldFiles.find(fileName);
+		auto findItr = oldFiles.find(fileName);
 
 		bool found = (findItr != oldFiles.end());
 		if (!found)
@@ -3258,7 +3258,7 @@ void ParsingFile::TakeReplaceLine(ReplaceLine &replaceLine, FileID from, FileID 
 // 取出新增前置声明信息
 void ParsingFile::TakeForwardClass(FileHistory &history, FileID insertAfter, FileID top) const
 {
-	auto &useRecordItr = m_fowardClass.find(top);
+	auto useRecordItr = m_fowardClass.find(top);
 	if (useRecordItr == m_fowardClass.end())
 	{
 		return;
@@ -3776,7 +3776,7 @@ void ParsingFile::DebugUsedNames(FileID file, const std::vector<UseNameInfo> &us
 		{
 			std::stringstream linesStream;
 
-			auto & linesItr = beuse.nameMap.find(name);
+			auto linesItr = beuse.nameMap.find(name);
 			if (linesItr != beuse.nameMap.end())
 			{
 				const std::set<int> &lines = linesItr->second;

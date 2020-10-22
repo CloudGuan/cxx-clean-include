@@ -13,6 +13,7 @@
 #include "history.h"
 #include "tool.h"
 #include "html_log.h"
+#include <xlocale>
 
 // 初始化环境配置
 bool Init(CxxCleanOptionsParser &optionParser, int argc, const char **argv)
@@ -22,8 +23,8 @@ bool Init(CxxCleanOptionsParser &optionParser, int argc, const char **argv)
 	llvm::InitializeNativeTarget();				// 初始化当前平台环境
 	llvm::InitializeNativeTargetAsmParser();	// 支持解析asm
 
-	locale &loc=locale::global(locale(locale(),"",LC_CTYPE));  // 不论以输出文件流还是输入文件流，此操作应放在其两边
-	locale::global(loc);
+	std::locale loc=std::locale::global(std::locale(std::locale(),"",LC_CTYPE));  // 不论以输出文件流还是输入文件流，此操作应放在其两边
+	std::locale::global(loc);
 	
 	// 解析命令行参数
 	bool ok = optionParser.ParseOptions(argc, argv);

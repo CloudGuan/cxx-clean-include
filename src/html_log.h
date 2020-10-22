@@ -7,6 +7,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 namespace llvm
 {
@@ -152,7 +153,7 @@ class HtmlLog
 public:
 	HtmlLog();
 
-	bool Init(const std::wstring &htmlPath, const std::string &htmlTitle, const std::string &tip);
+	bool Init(const wchar_t *htmlPath, const char* htmlTitle, const char* tip);
 
 	void Open();
 
@@ -167,16 +168,16 @@ public:
 	static HtmlLog instance;
 
 public:
-	std::wstring		m_htmlPath;
+        std::wstring m_htmlPath{};
 
-	// 网页文件标题
-	std::string			m_htmlTitle;
+	// 网页文件标题 
+        std::string m_htmlTitle{""};
 
 	// 网页内的提示
-	std::string			m_tip;
+        std::string m_tip{};
 
-	// 当前的div
-	HtmlDiv				m_newDiv;
+	// 当前的div 
+        HtmlDiv m_newDiv{};
 
-	llvm::raw_ostream*	m_log;
+	llvm::raw_ostream *m_log{nullptr};
 };

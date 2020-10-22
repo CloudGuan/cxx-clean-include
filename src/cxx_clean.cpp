@@ -7,7 +7,6 @@
 #include "cxx_clean.h"
 #include <sstream>
 #include <llvm/Option/ArgList.h>
-#include <lib/Driver/ToolChains.h>
 #include <clang/Lex/HeaderSearch.h>
 #include <clang/Basic/Version.h>
 #include <clang/Driver/ToolChain.h>
@@ -60,8 +59,9 @@ void CxxCleanPreprocessor::Defined(const Token &macroName, const MacroDefinition
 void CxxCleanPreprocessor::MacroDefined(const Token &macroName, const MacroDirective *direct) {}
 
 // 宏被#undef
-void CxxCleanPreprocessor::MacroUndefined(const Token &macroName, const MacroDefinition &definition)
-{
+void CxxCleanPreprocessor::MacroUndefined(const Token &macroName,
+                                          const MacroDefinition &definition,
+                                          const MacroDirective *Undef) {
 	m_root->UseMacro(macroName.getLocation(), definition, macroName);
 }
 
@@ -90,7 +90,7 @@ CxxCleanASTVisitor::CxxCleanASTVisitor(ParsingFile *rootFile)
 // 访问单条语句
 bool CxxCleanASTVisitor::VisitStmt(Stmt *s)
 {
-	SourceLocation loc = s->getLocStart();
+	SourceLocation loc = s->getBeginLoc();
 	if (m_root->IsInSystemHeader(loc))
 	{
 		return true;
@@ -268,7 +268,7 @@ bool CxxCleanASTVisitor::VisitStmt(Stmt *s)
 // 访问函数声明
 bool CxxCleanASTVisitor::VisitFunctionDecl(FunctionDecl *f)
 {
-	SourceLocation loc = f->getLocStart();
+	SourceLocation loc = f->getBeginLoc();
 	if (m_root->IsInSystemHeader(loc))
 	{
 		return true;
@@ -322,7 +322,7 @@ bool CxxCleanASTVisitor::VisitCXXRecordDecl(CXXRecordDecl *r)
 		return true;
 	}
 
-	SourceLocation loc = r->getLocStart();
+	SourceLocation loc = r->getBeginLoc();
 	if (m_root->IsInSystemHeader(loc))
 	{
 		return true;
@@ -360,7 +360,7 @@ bool CxxCleanASTVisitor::VisitCXXRecordDecl(CXXRecordDecl *r)
 // 当发现变量定义时该接口被调用
 bool CxxCleanASTVisitor::VisitVarDecl(VarDecl *var)
 {
-	SourceLocation loc = var->getLocStart();
+	SourceLocation loc = var->getBeginLoc();
 	if (m_root->IsInSystemHeader(loc))
 	{
 		return true;
@@ -385,7 +385,7 @@ bool CxxCleanASTVisitor::VisitVarDecl(VarDecl *var)
 		{
 			if (!next->hasExternalStorage())
 			{
-				m_root->UseVarDecl(next->getLocStart(), var, var->getQualifier());
+				m_root->UseVarDecl(next->getBeginLoc(), var, var->getQualifier());
 			}
 		}
 	}
@@ -396,7 +396,7 @@ bool CxxCleanASTVisitor::VisitVarDecl(VarDecl *var)
 // 比如：typedef int A;
 bool CxxCleanASTVisitor::VisitTypedefDecl(clang::TypedefDecl *d)
 {
-	SourceLocation loc = d->getLocStart();
+	SourceLocation loc = d->getBeginLoc();
 	if (m_root->IsInSystemHeader(loc))
 	{
 		return true;
@@ -409,7 +409,7 @@ bool CxxCleanASTVisitor::VisitTypedefDecl(clang::TypedefDecl *d)
 // 比如：namespace A{}
 bool CxxCleanASTVisitor::VisitNamespaceDecl(clang::NamespaceDecl *d)
 {
-	SourceLocation loc = d->getLocStart();
+	SourceLocation loc = d->getBeginLoc();
 	if (m_root->IsInSystemHeader(loc))
 	{
 		return true;
@@ -461,39 +461,39 @@ bool CxxCleanASTVisitor::VisitUsingDecl(clang::UsingDecl *d)
 // 访问成员变量
 bool CxxCleanASTVisitor::VisitFieldDecl(FieldDecl *decl)
 {
-	SourceLocation loc = decl->getLocStart();
+	SourceLocation loc = decl->getBeginLoc();
 	if (m_root->IsInSystemHeader(loc))
 	{
 		return true;
 	}
 
-	m_root->UseValueDecl(decl->getLocStart(), decl);
+	m_root->UseValueDecl(decl->getBeginLoc(), decl);
 	return true;
 }
 
 // 构造声明
 bool CxxCleanASTVisitor::VisitCXXConstructorDecl(CXXConstructorDecl *constructor)
 {
-	SourceLocation loc = constructor->getLocStart();
+	SourceLocation loc = constructor->getBeginLoc();
 	if (m_root->IsInSystemHeader(loc))
 	{
 		return true;
 	}
 
-	m_root->UseConstructor(constructor->getLocStart(), constructor);
+	m_root->UseConstructor(constructor->getBeginLoc(), constructor);
 	return true;
 }
 
 // 构造语句
 bool CxxCleanASTVisitor::VisitCXXConstructExpr(CXXConstructExpr *expr)
 {
-	SourceLocation loc = expr->getLocStart();
+	SourceLocation loc = expr->getBeginLoc();
 	if (m_root->IsInSystemHeader(loc))
 	{
 		return true;
 	}
 
-	m_root->UseConstructor(expr->getLocStart(), expr->getConstructor());
+	m_root->UseConstructor(expr->getBeginLoc(), expr->getConstructor());
 	return true;
 }
 
@@ -612,10 +612,9 @@ void CxxcleanDiagnosticConsumer::HandleDiagnostic(DiagnosticsEngine::Level diagL
 }
 
 // 开始文件处理
-bool CxxCleanAction::BeginSourceFileAction(CompilerInstance &compiler, StringRef filename)
-{
+bool CxxCleanAction::BeginSourceFileAction(CompilerInstance &compiler) {
 	++ProjectHistory::instance.g_fileNum;
-	Log("cleaning file: " << ProjectHistory::instance.g_fileNum << "/" << Project::instance.m_cpps.size() << ". " << filename << " ...");
+	Log("cleaning file: " << ProjectHistory::instance.g_fileNum << "/" << Project::instance.m_cpps.size() << ". " << getCurrentFile() << " ...");
 	return true;
 }
 
@@ -632,8 +631,8 @@ std::unique_ptr<ASTConsumer> CxxCleanAction::CreateASTConsumer(CompilerInstance 
 {
 	m_root = new ParsingFile(compiler);
 
-	compiler.getPreprocessor().addPPCallbacks(llvm::make_unique<CxxCleanPreprocessor>(m_root));
-	return llvm::make_unique<CxxCleanASTConsumer>(m_root);
+	compiler.getPreprocessor().addPPCallbacks(std::make_unique<CxxCleanPreprocessor>(m_root));
+	return std::make_unique<CxxCleanASTConsumer>(m_root);
 }
 
 static llvm::cl::OptionCategory g_optionCategory("cxx-clean-include category");
@@ -650,9 +649,8 @@ static cl::opt<string>	g_cleanOption	("clean",
                  "    2. clean a c++ file: -clean ./hello.cpp\n"
                 ), cl::cat(g_optionCategory));
 
-void PrintVersion()
-{
-	llvm::outs() << clang::getClangToolFullVersion("clang lib version: ") << '\n';
+void PrintVersion(raw_ostream& outer) {
+  outer << clang::getClangToolFullVersion("clang lib version: ") << '\n';
 }
 
 // 解析选项并将解析结果存入相应的对象，若应中途退出则返回true，否则返回false
@@ -660,6 +658,7 @@ bool CxxCleanOptionsParser::ParseOptions(int &argc, const char **argv)
 {
 	// 使用-help选项时，仅打印本工具的选项
 	cl::HideUnrelatedOptions(g_optionCategory);
+
 	cl::SetVersionPrinter(PrintVersion);
 
 	m_compilation.reset(SplitCommandLine(argc, argv));

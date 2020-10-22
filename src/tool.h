@@ -8,6 +8,8 @@
 
 #include <iterator>
 #include <vector>
+#include <string>
+
 
 namespace llvm
 {

@@ -1,7 +1,6 @@
 #ifndef _m_4_h_
 #define _m_4_h_
 
-#include "m_1.h"	// Ó¦É¾³ý
 
 namespace ns_m0
 {

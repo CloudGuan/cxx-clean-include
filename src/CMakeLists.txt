@@ -4,7 +4,7 @@ set( LLVM_LINK_COMPONENTS
   Support
 )
 
-add_clang_executable(cxxclean
+add_clang_tool(cxxclean
 	cxx_clean.cpp
 	parser.cpp	
 	project.cpp
@@ -20,6 +20,7 @@ include_directories(
 )
 
 target_link_libraries(cxxclean
+  PRIVATE
   clangAST
   clangBasic
   clangDriver
